@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { deleteDoc, doc } from "firebase/firestore";
-import PomodoroTimer from "../components/PomodoroTimer";
+import PomodoroTimer from "../components/PomodoroTimer";  // You can remove this import if you don't want PomodoroTimer at all
 import Analytics from '../components/Analytics.jsx';
 import PieAnalytics from '../components/PieAnalytics.jsx'; 
 
@@ -32,10 +32,9 @@ export default function Home() {
   // Progress list
   const [progressList, setProgressList] = useState([]);
 
-  // --- States for Main App UI (Pomodoro Tasks) ---
+  // --- States for To-Do List ---
   const [tasks, setTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [todayFocusSeconds, setTodayFocusSeconds] = useState(0); // You can update this based on PomodoroTimer events
 
   // Fetch user's progress data from Firestore in realtime
   useEffect(() => {
@@ -72,7 +71,7 @@ export default function Home() {
     }
   };
 
-  // Simple toggle complete for tasks
+  // To-Do List: Toggle complete status
   const toggleTaskComplete = (id) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -83,7 +82,12 @@ export default function Home() {
     );
   };
 
-  // Add a new task to the list
+  // To-Do List: Remove task
+  const removeTask = (id) => {
+    setTasks((prevTasks) => prevTasks.filter(task => task.id !== id));
+  };
+
+  // To-Do List: Add new task
   const addTask = () => {
     if (!newTaskTitle.trim()) return;
 
@@ -91,7 +95,6 @@ export default function Home() {
       id: Date.now().toString(),
       title: newTaskTitle.trim(),
       completed: false,
-      pomodoroCount: 0,
     };
     setTasks((prev) => [newTask, ...prev]);
     setNewTaskTitle("");
@@ -160,15 +163,17 @@ export default function Home() {
           Logout
         </button>
       </header>
- {/* Responsive Analytics Container */}
-        <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
-          <div className="flex-1 min-w-0">
-            <Analytics />
-          </div>
-          <div className="flex-1 min-w-0">
-            <PieAnalytics />
-          </div>
-        </section>
+
+      {/* Responsive Analytics Container */}
+      <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
+        <div className="flex-1 min-w-0">
+          <Analytics />
+        </div>
+        <div className="flex-1 min-w-0">
+          <PieAnalytics />
+        </div>
+      </section>
+
       {/* Progress List */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Progress</h2>
@@ -216,80 +221,51 @@ export default function Home() {
           </ul>
         )}
       </section>
-
-      {/* Pomodoro Timer Section */}
-      <section className="mb-10">
-        <PomodoroTimer />
-      </section>
-
-      {/* MAIN APP UI */}
-      <div
-        className="mx-auto w-full max-w-xl px-4 select-none font-sans"
-        style={{ userSelect: "none" }}
-      >
-        <h1 className="text-center mb-6 text-xl sm:text-2xl font-semibold">Pomodoro Task Tracker</h1>
-
-        {/* Analytics */}
-        <section
-          className="mb-6 p-4 border border-gray-300 rounded bg-gray-50 text-center"
-          aria-label="Today's Focus Time"
-        >
-          <h2 className="mb-2 font-semibold text-gray-700">Today's Focus Time</h2>
-          <p className="text-2xl font-bold text-blue-600">
-            {(todayFocusSeconds / 60).toFixed(1)} minutes
-          </p>
-        </section>
-
-
-
-        {/* Tasks List */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">Tasks</h2>
-          <ul className="p-0 list-none">
-            {tasks.map((task) => (
-              <li
-                key={task.id}
-                className={`p-2 mb-2 rounded flex justify-between items-center cursor-pointer 
-                  ${task.completed ? "bg-green-100" : "bg-gray-100"}`}
-                onClick={() => toggleTaskComplete(task.id)}
-                title="Click to toggle complete"
-              >
-                <span
-                  className={`flex-grow truncate ${task.completed ? "line-through" : ""}`}
-                >
-                  {task.title}
-                </span>
-                <span
-                  className="bg-blue-600 text-white rounded-full px-2 text-xs select-none"
-                  title="Pomodoros completed on this task"
-                >
-                  🍅 {task.pomodoroCount || 0}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Add Task */}
-          <div className="flex gap-2 mt-4">
-            <input
-              type="text"
-              placeholder="New task title"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
-              className="flex-grow p-2 border border-gray-300 rounded text-base"
-              aria-label="New task title"
-            />
-            <button
-              onClick={addTask}
-              style={buttonStyle}
-              aria-label="Add task"
+<section className="mb-10"> <PomodoroTimer /> </section>
+      {/* To-Do List Section */}
+      <section className="mb-10 max-w-xl mx-auto">
+        <h2 className="text-xl font-semibold mb-4 text-center">To-Do List</h2>
+        <ul className="p-0 list-none mb-4">
+          {tasks.length === 0 && (
+            <p className="text-center text-gray-500">No tasks added yet.</p>
+          )}
+          {tasks.map((task) => (
+            <li
+              key={task.id}
+              className={`p-3 mb-2 rounded flex justify-between items-center cursor-pointer
+                ${task.completed ? "bg-green-100 line-through text-gray-600" : "bg-gray-100"}`}
             >
-              Add
-            </button>
-          </div>
-        </section>
-      </div>
+              <span onClick={() => toggleTaskComplete(task.id)}>{task.title}</span>
+              <button
+                onClick={() => removeTask(task.id)}
+                aria-label="Remove task"
+                title="Remove task"
+                className="text-red-600 hover:text-red-800 font-bold ml-4"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="New task title"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
+            className="flex-grow p-3 border border-gray-300 rounded text-base"
+            aria-label="New task title"
+          />
+          <button
+            onClick={addTask}
+            style={buttonStyle}
+            aria-label="Add task"
+          >
+            Add
+          </button>
+        </div>
+      </section>
 
       {/* Add Progress Modal */}
       {showModal && (
