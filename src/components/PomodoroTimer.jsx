@@ -349,8 +349,6 @@ export default function PomodoroApp() {
           </div>
         </div>
       )}
-
-      
     </>
   );
 }

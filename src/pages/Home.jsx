@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { deleteDoc, doc } from "firebase/firestore";
 import PomodoroTimer from "../components/PomodoroTimer";
 import Analytics from '../components/Analytics.jsx';
+import PieAnalytics from '../components/PieAnalytics.jsx'; 
 
 import {
   collection,
@@ -18,13 +19,11 @@ export default function Home() {
   const { user, logout } = useAuth();
 
   // Progress form states
- // Progress form states
-const [subject, setSubject] = useState("");
-const [topic, setTopic] = useState("");
-const [percentage, setPercentage] = useState("");
-const [notes, setNotes] = useState("");
-const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
-
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
+  const [percentage, setPercentage] = useState("");
+  const [notes, setNotes] = useState("");
+  const [understanding, setUnderstanding] = useState(3); // slider value
 
   // Modal & Loading states
   const [showModal, setShowModal] = useState(false);
@@ -116,6 +115,7 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
         topic,
         percentage: Number(percentage),
         notes,
+        understanding: Number(understanding), // Save understanding
         createdAt: new Date(),
       });
 
@@ -124,6 +124,7 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
       setTopic("");
       setPercentage("");
       setNotes("");
+      setUnderstanding(3); // reset slider
       setShowModal(false);
     } catch (err) {
       console.error("Error saving progress:", err);
@@ -143,6 +144,9 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
     fontWeight: "bold",
     userSelect: "none",
   };
+
+  // Emoji array for understanding level
+  const understandingEmojis = ["😕", "😐", "🙂", "😃", "🤓"];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-28">
@@ -167,7 +171,7 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
 
         <ul className="space-y-3">
           {progressList.map(
-            ({ id, subject, topic, percentage, notes, createdAt }) => (
+            ({ id, subject, topic, percentage, notes, createdAt, understanding }) => (
               <li
                 key={id}
                 className="bg-white p-4 rounded shadow flex flex-col relative"
@@ -191,6 +195,12 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
                 <p className="text-gray-700 mb-1">{topic}</p>
                 {notes && (
                   <p className="text-gray-600 text-sm italic">{notes}</p>
+                )}
+                {/* Understanding emoji */}
+                {typeof understanding === "number" && (
+                  <div className="text-xl mt-1" title={`Understanding level: ${understanding}`}>
+                    {understandingEmojis[understanding - 1]}
+                  </div>
                 )}
                 {createdAt?.toDate && (
                   <p className="text-xs text-gray-400 mt-2">
@@ -235,7 +245,8 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
             {(todayFocusSeconds / 60).toFixed(1)} minutes
           </p>
         </section>
-   <Analytics />
+        <Analytics />
+<PieAnalytics />
 
         {/* Tasks List */}
         <section>
@@ -308,105 +319,105 @@ const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
       </div>
 
       {/* Add Progress Modal */}
-{showModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-    <form
-      onSubmit={saveProgress}
-      className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl space-y-4"
-    >
-      <h3 className="text-xl font-semibold text-gray-800">📈 Add Progress</h3>
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+          <form
+            onSubmit={saveProgress}
+            className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl space-y-4"
+          >
+            <h3 className="text-xl font-semibold text-gray-800">📈 Add Progress</h3>
 
-      {/* Subject Dropdown */}
-      <select
-        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        required
-      >
-        <option value="">Select Subject *</option>
-        <option value="Physics">Physics</option>
-        <option value="Chemistry">Chemistry</option>
-        <option value="Math">Math</option>
-      </select>
+            {/* Subject Dropdown */}
+            <select
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              required
+            >
+              <option value="">Select Subject *</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Math">Math</option>
+            </select>
 
-      {/* Topic (optional) */}
-      <input
-        type="text"
-        placeholder="Topic (optional)"
-        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-      />
+            {/* Topic (optional) */}
+            <input
+              type="text"
+              placeholder="Topic (optional)"
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+            />
 
-      {/* % Completed */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Percentage Completed
-        </label>
-        <input
-          type="number"
-          min={0}
-          max={100}
-          placeholder="0 - 100"
-          className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-          value={percentage}
-          onChange={(e) => setPercentage(e.target.value)}
-        />
-      </div>
+            {/* % Completed */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Percentage Completed
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                placeholder="0 - 100"
+                className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+                value={percentage}
+                onChange={(e) => setPercentage(e.target.value)}
+              />
+            </div>
 
-      {/* Understanding (Slider) */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Understanding Level
-        </label>
-        <input
-          type="range"
-          min="1"
-          max="5"
-          value={understanding}
-          onChange={(e) => setUnderstanding(e.target.value)}
-          className="w-full"
-        />
-        <div className="text-center text-lg mt-1">
-          {["😕","😐","🙂","😃","🤓"][understanding - 1]}
+            {/* Understanding (Slider) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Understanding Level
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                value={understanding}
+                onChange={(e) => setUnderstanding(e.target.value)}
+                className="w-full"
+              />
+              <div className="text-center text-lg mt-1">
+                {understandingEmojis[understanding - 1]}
+              </div>
+            </div>
+
+            {/* Notes (optional) */}
+            <textarea
+              placeholder="Notes (optional)"
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+
+            {/* Save Button */}
+            <button
+              type="submit"
+              disabled={loadingSave}
+              className="w-full bg-pink-500 text-white py-3 rounded font-semibold hover:bg-pink-600 disabled:bg-pink-300 transition"
+            >
+              {loadingSave ? "Saving..." : "Save Progress"}
+            </button>
+
+            {/* Cancel Button */}
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="w-full text-center text-pink-600 font-semibold mt-2 hover:underline"
+            >
+              Cancel
+            </button>
+          </form>
         </div>
-      </div>
+      )}
 
-      {/* Notes (optional) */}
-      <textarea
-        placeholder="Notes (optional)"
-        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-        rows={2}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
-
-      {/* Save Button */}
-      <button
-        type="submit"
-        disabled={loadingSave}
-        className="w-full bg-pink-500 text-white py-3 rounded font-semibold hover:bg-pink-600 disabled:bg-pink-300"
-      >
-        {loadingSave ? "Saving..." : "Save"}
-      </button>
-
-      {/* Cancel */}
-      <button
-        type="button"
-        onClick={() => setShowModal(false)}
-        className="w-full py-2 rounded text-center border border-gray-300 text-gray-600 hover:bg-gray-100"
-      >
-        Cancel
-      </button>
-    </form>
-  </div>
-)}
-
-      {/* Floating Action Button to open modal */}
+      {/* Floating Add Button */}
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-12 right-6 bg-pink-500 hover:bg-pink-600 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg text-3xl font-bold"
-        title="Add Progress"
+        aria-label="Add progress"
+        className="fixed bottom-8 right-8 bg-pink-500 hover:bg-pink-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-3xl font-bold select-none"
       >
         +
       </button>
