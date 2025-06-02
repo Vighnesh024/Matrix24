@@ -149,10 +149,10 @@ export default function Home() {
   const understandingEmojis = ["😕", "😐", "🙂", "😃", "🤓"];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-28">
+    <div className="min-h-screen bg-gray-50 p-4 pb-28 max-w-screen-lg mx-auto">
       {/* Header */}
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Welcome, {user.email}</h1>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+        <h1 className="text-2xl font-bold text-gray-800 break-words">Welcome, {user.email}</h1>
         <button
           onClick={logout}
           className="text-red-600 font-semibold hover:underline"
@@ -162,19 +162,17 @@ export default function Home() {
       </header>
 
       {/* Progress List */}
-      <section>
+      <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Progress</h2>
 
-        {progressList.length === 0 && (
+        {progressList.length === 0 ? (
           <p className="text-gray-500">No progress entries yet.</p>
-        )}
-
-        <ul className="space-y-3">
-          {progressList.map(
-            ({ id, subject, topic, percentage, notes, createdAt, understanding }) => (
+        ) : (
+          <ul className="space-y-3">
+            {progressList.map(({ id, subject, topic, percentage, notes, createdAt, understanding }) => (
               <li
                 key={id}
-                className="bg-white p-4 rounded shadow flex flex-col relative"
+                className="bg-white p-4 rounded shadow flex flex-col relative break-words"
               >
                 {/* Delete button */}
                 <button
@@ -186,19 +184,17 @@ export default function Home() {
                   ×
                 </button>
 
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-1 flex-wrap gap-2">
                   <h3 className="font-bold text-lg">{subject}</h3>
-                  <span className="text-sm text-gray-500 font-semibold">
-                    {percentage}%
-                  </span>
+                  <span className="text-sm text-gray-500 font-semibold">{percentage}%</span>
                 </div>
                 <p className="text-gray-700 mb-1">{topic}</p>
-                {notes && (
-                  <p className="text-gray-600 text-sm italic">{notes}</p>
-                )}
-                {/* Understanding emoji */}
+                {notes && <p className="text-gray-600 text-sm italic">{notes}</p>}
                 {typeof understanding === "number" && (
-                  <div className="text-xl mt-1" title={`Understanding level: ${understanding}`}>
+                  <div
+                    className="text-xl mt-1"
+                    title={`Understanding level: ${understanding}`}
+                  >
                     {understandingEmojis[understanding - 1]}
                   </div>
                 )}
@@ -208,83 +204,63 @@ export default function Home() {
                   </p>
                 )}
               </li>
-            )
-          )}
-        </ul>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* Pomodoro Timer Section */}
-      <section className="mt-10">
+      <section className="mb-10">
         <PomodoroTimer />
       </section>
 
-      {/* --- MAIN APP UI --- */}
+      {/* MAIN APP UI */}
       <div
-        style={{
-          maxWidth: 480,
-          margin: "2rem auto",
-          padding: "0 1rem",
-          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-          userSelect: "none",
-        }}
+        className="mx-auto w-full max-w-xl px-4 select-none font-sans"
+        style={{ userSelect: "none" }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: 24 }}>Pomodoro Task Tracker</h1>
+        <h1 className="text-center mb-6 text-xl sm:text-2xl font-semibold">Pomodoro Task Tracker</h1>
 
         {/* Analytics */}
         <section
-          style={{
-            marginBottom: 24,
-            padding: 12,
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            background: "#f9fafb",
-          }}
+          className="mb-6 p-4 border border-gray-300 rounded bg-gray-50 text-center"
+          aria-label="Today's Focus Time"
         >
-          <h2 style={{ marginBottom: 8 }}>Today's Focus Time</h2>
-          <p style={{ fontSize: 24, fontWeight: "bold", color: "#2563eb" }}>
+          <h2 className="mb-2 font-semibold text-gray-700">Today's Focus Time</h2>
+          <p className="text-2xl font-bold text-blue-600">
             {(todayFocusSeconds / 60).toFixed(1)} minutes
           </p>
         </section>
-        <Analytics />
-<PieAnalytics />
+
+        {/* Responsive Analytics Container */}
+        <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
+          <div className="flex-1 min-w-0">
+            <Analytics />
+          </div>
+          <div className="flex-1 min-w-0">
+            <PieAnalytics />
+          </div>
+        </section>
 
         {/* Tasks List */}
         <section>
-          <h2>Tasks</h2>
-          <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+          <h2 className="text-lg font-semibold mb-4">Tasks</h2>
+          <ul className="p-0 list-none">
             {tasks.map((task) => (
               <li
                 key={task.id}
-                style={{
-                  padding: 8,
-                  marginBottom: 6,
-                  background: task.completed ? "#d1fae5" : "#f3f4f6",
-                  borderRadius: 6,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
+                className={`p-2 mb-2 rounded flex justify-between items-center cursor-pointer 
+                  ${task.completed ? "bg-green-100" : "bg-gray-100"}`}
                 onClick={() => toggleTaskComplete(task.id)}
                 title="Click to toggle complete"
               >
                 <span
-                  style={{
-                    textDecoration: task.completed ? "line-through" : "none",
-                    flexGrow: 1,
-                  }}
+                  className={`flex-grow truncate ${task.completed ? "line-through" : ""}`}
                 >
                   {task.title}
                 </span>
                 <span
-                  style={{
-                    background: "#2563eb",
-                    color: "white",
-                    borderRadius: 12,
-                    padding: "2px 8px",
-                    fontSize: 12,
-                    userSelect: "none",
-                  }}
+                  className="bg-blue-600 text-white rounded-full px-2 text-xs select-none"
                   title="Pomodoros completed on this task"
                 >
                   🍅 {task.pomodoroCount || 0}
@@ -294,24 +270,21 @@ export default function Home() {
           </ul>
 
           {/* Add Task */}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div className="flex gap-2 mt-4">
             <input
               type="text"
               placeholder="New task title"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
-              style={{
-                flexGrow: 1,
-                padding: 8,
-                borderRadius: 6,
-                border: "1px solid #d1d5db",
-                fontSize: 16,
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") addTask();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
+              className="flex-grow p-2 border border-gray-300 rounded text-base"
+              aria-label="New task title"
             />
-            <button onClick={addTask} style={buttonStyle}>
+            <button
+              onClick={addTask}
+              style={buttonStyle}
+              aria-label="Add task"
+            >
               Add
             </button>
           </div>
@@ -320,12 +293,19 @@ export default function Home() {
 
       {/* Add Progress Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <form
             onSubmit={saveProgress}
             className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl space-y-4"
           >
-            <h3 className="text-xl font-semibold text-gray-800">📈 Add Progress</h3>
+            <h3 id="modal-title" className="text-xl font-semibold text-gray-800">
+              📈 Add Progress
+            </h3>
 
             {/* Subject Dropdown */}
             <select
@@ -417,7 +397,7 @@ export default function Home() {
       <button
         onClick={() => setShowModal(true)}
         aria-label="Add progress"
-        className="fixed bottom-8 right-8 bg-pink-500 hover:bg-pink-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-3xl font-bold select-none"
+        className="fixed bottom-8 right-8 bg-pink-600 text-white p-4 rounded-full shadow-lg hover:bg-pink-700 transition focus:outline-none focus:ring-2 focus:ring-pink-500"
       >
         +
       </button>
