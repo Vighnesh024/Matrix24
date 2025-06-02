@@ -160,7 +160,15 @@ export default function Home() {
           Logout
         </button>
       </header>
-
+ {/* Responsive Analytics Container */}
+        <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
+          <div className="flex-1 min-w-0">
+            <Analytics />
+          </div>
+          <div className="flex-1 min-w-0">
+            <PieAnalytics />
+          </div>
+        </section>
       {/* Progress List */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Progress</h2>
@@ -232,15 +240,7 @@ export default function Home() {
           </p>
         </section>
 
-        {/* Responsive Analytics Container */}
-        <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
-          <div className="flex-1 min-w-0">
-            <Analytics />
-          </div>
-          <div className="flex-1 min-w-0">
-            <PieAnalytics />
-          </div>
-        </section>
+
 
         {/* Tasks List */}
         <section>
