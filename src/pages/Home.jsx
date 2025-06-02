@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { deleteDoc, doc } from "firebase/firestore";
 import PomodoroTimer from "../components/PomodoroTimer";
+import Analytics from '../components/Analytics.jsx';
+
 import {
   collection,
   addDoc,
@@ -16,10 +18,13 @@ export default function Home() {
   const { user, logout } = useAuth();
 
   // Progress form states
-  const [subject, setSubject] = useState("");
-  const [topic, setTopic] = useState("");
-  const [percentage, setPercentage] = useState("");
-  const [notes, setNotes] = useState("");
+ // Progress form states
+const [subject, setSubject] = useState("");
+const [topic, setTopic] = useState("");
+const [percentage, setPercentage] = useState("");
+const [notes, setNotes] = useState("");
+const [understanding, setUnderstanding] = useState(3); // ✅ Add this line
+
 
   // Modal & Loading states
   const [showModal, setShowModal] = useState(false);
@@ -230,6 +235,7 @@ export default function Home() {
             {(todayFocusSeconds / 60).toFixed(1)} minutes
           </p>
         </section>
+   <Analytics />
 
         {/* Tasks List */}
         <section>
@@ -302,65 +308,99 @@ export default function Home() {
       </div>
 
       {/* Add Progress Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <form
-            onSubmit={saveProgress}
-            className="bg-white w-11/12 max-w-sm p-6 rounded-xl shadow-lg"
-          >
-            <h3 className="text-lg font-semibold mb-4">Add Progress</h3>
+{showModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+    <form
+      onSubmit={saveProgress}
+      className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl space-y-4"
+    >
+      <h3 className="text-xl font-semibold text-gray-800">📈 Add Progress</h3>
 
-            <input
-              type="text"
-              placeholder="Subject *"
-              className="w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
+      {/* Subject Dropdown */}
+      <select
+        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        required
+      >
+        <option value="">Select Subject *</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Math">Math</option>
+      </select>
 
-            <input
-              type="text"
-              placeholder="Topic"
-              className="w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-            />
+      {/* Topic (optional) */}
+      <input
+        type="text"
+        placeholder="Topic (optional)"
+        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+      />
 
-            <input
-              type="number"
-              placeholder="Percentage Completed"
-              className="w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
-              value={percentage}
-              onChange={(e) => setPercentage(e.target.value)}
-            />
+      {/* % Completed */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Percentage Completed
+        </label>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          placeholder="0 - 100"
+          className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
+          value={percentage}
+          onChange={(e) => setPercentage(e.target.value)}
+        />
+      </div>
 
-            <textarea
-              placeholder="Notes"
-              className="w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-
-            <button
-              type="submit"
-              disabled={loadingSave}
-              className="w-full bg-pink-500 text-white py-3 rounded font-semibold hover:bg-pink-600 disabled:bg-pink-300"
-            >
-              {loadingSave ? "Saving..." : "Save"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="mt-3 w-full py-2 border rounded text-center hover:bg-gray-100"
-            >
-              Cancel
-            </button>
-          </form>
+      {/* Understanding (Slider) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Understanding Level
+        </label>
+        <input
+          type="range"
+          min="1"
+          max="5"
+          value={understanding}
+          onChange={(e) => setUnderstanding(e.target.value)}
+          className="w-full"
+        />
+        <div className="text-center text-lg mt-1">
+          {["😕","😐","🙂","😃","🤓"][understanding - 1]}
         </div>
-      )}
+      </div>
+
+      {/* Notes (optional) */}
+      <textarea
+        placeholder="Notes (optional)"
+        className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+
+      {/* Save Button */}
+      <button
+        type="submit"
+        disabled={loadingSave}
+        className="w-full bg-pink-500 text-white py-3 rounded font-semibold hover:bg-pink-600 disabled:bg-pink-300"
+      >
+        {loadingSave ? "Saving..." : "Save"}
+      </button>
+
+      {/* Cancel */}
+      <button
+        type="button"
+        onClick={() => setShowModal(false)}
+        className="w-full py-2 rounded text-center border border-gray-300 text-gray-600 hover:bg-gray-100"
+      >
+        Cancel
+      </button>
+    </form>
+  </div>
+)}
 
       {/* Floating Action Button to open modal */}
       <button
