@@ -328,12 +328,15 @@
         )}
 
         {/* Floating Add Button */}
-        <button
-          onClick={() => setShowModal(true)}
-          className="fixed bottom-8 right-8 bg-pink-600 text-white p-4 rounded-full shadow-lg hover:bg-pink-700 transition"
-        >
-          +
-        </button>
+       <button
+  onClick={() => setShowModal(true)}
+  className="fixed bottom-8 right-8 bg-pink-500 hover:bg-pink-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-3xl transition duration-300 active:scale-95 z-40"
+  title="Add Progress"
+>
+  +
+</button>
+
+
       </div>
     );
   }

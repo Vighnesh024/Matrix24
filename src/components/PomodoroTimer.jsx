@@ -168,11 +168,13 @@ export default function PomodoroApp() {
       {/* Show/Hide Button */}
       {!visible && (
         <button
-          onClick={() => setVisible(true)}
-          className="fixed bottom-4 right-4 bg-pink-500 text-white rounded-full px-4 py-2 shadow-lg"
-        >
-          Show Timer
-        </button>
+  onClick={() => setVisible(true)}
+  className="fixed bottom-28 right-8 bg-pink-500 hover:bg-pink-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-2xl transition duration-300 active:scale-95 z-40"
+  title="Start Pomodoro Timer"
+>
+  ⏱️
+</button>
+
       )}
 
       {/* Pomodoro Timer */}
