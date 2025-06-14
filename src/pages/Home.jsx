@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { deleteDoc, doc } from "firebase/firestore";
-import PomodoroTimer from "../components/PomodoroTimer";  // You can remove this import if you don't want PomodoroTimer at all
+import toast from 'react-hot-toast';
+import { orderBy } from "firebase/firestore";
+import { motion, AnimatePresence } from 'framer-motion';
+import PomodoroTimer from "../components/PomodoroTimer";
 import Analytics from '../components/Analytics.jsx';
-import PieAnalytics from '../components/PieAnalytics.jsx'; 
+import PieAnalytics from '../components/PieAnalytics.jsx';
 
 import {
   collection,
   addDoc,
   query,
   where,
-  orderBy,
   onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc
 } from "firebase/firestore";
-import { db } from "../firebase";
+
+import { db } from "../firebase.js";
 
 export default function Home() {
   const { user, logout } = useAuth();
@@ -23,7 +28,7 @@ export default function Home() {
   const [topic, setTopic] = useState("");
   const [percentage, setPercentage] = useState("");
   const [notes, setNotes] = useState("");
-  const [understanding, setUnderstanding] = useState(3); // slider value
+  const [understanding, setUnderstanding] = useState(3);
 
   // Modal & Loading states
   const [showModal, setShowModal] = useState(false);
@@ -32,11 +37,24 @@ export default function Home() {
   // Progress list
   const [progressList, setProgressList] = useState([]);
 
-  // --- States for To-Do List ---
+  // --- To-Do List ---
   const [tasks, setTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // Fetch user's progress data from Firestore in realtime
+  // Load tasks from localStorage
+  useEffect(() => {
+    const storedTasks = localStorage.getItem("tasks");
+    if (storedTasks) {
+      setTasks(JSON.parse(storedTasks));
+    }
+  }, []);
+
+  // Save tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  // Fetch user progress from Firestore
   useEffect(() => {
     if (!user) return;
 
@@ -57,37 +75,28 @@ export default function Home() {
     return unsubscribe;
   }, [user]);
 
-  // Delete progress entry handler
   const deleteProgress = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this progress entry?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this progress entry?")) return;
     try {
       await deleteDoc(doc(db, "progress", id));
-      // onSnapshot listener will update UI automatically
     } catch (err) {
       console.error("Error deleting progress:", err);
       alert("Failed to delete progress entry.");
     }
   };
 
-  // To-Do List: Toggle complete status
   const toggleTaskComplete = (id) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
       )
     );
   };
 
-  // To-Do List: Remove task
   const removeTask = (id) => {
-    setTasks((prevTasks) => prevTasks.filter(task => task.id !== id));
+    setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
-  // To-Do List: Add new task
   const addTask = () => {
     if (!newTaskTitle.trim()) return;
 
@@ -100,14 +109,9 @@ export default function Home() {
     setNewTaskTitle("");
   };
 
-  // Save new progress entry
   const saveProgress = async (e) => {
     e.preventDefault();
-
-    if (!user?.uid) {
-      alert("User not authenticated!");
-      return;
-    }
+    if (!user?.uid) return alert("User not authenticated!");
 
     setLoadingSave(true);
 
@@ -118,16 +122,15 @@ export default function Home() {
         topic,
         percentage: Number(percentage),
         notes,
-        understanding: Number(understanding), // Save understanding
+        understanding: Number(understanding),
         createdAt: new Date(),
       });
 
-      // Clear form and close modal after saving
       setSubject("");
       setTopic("");
       setPercentage("");
       setNotes("");
-      setUnderstanding(3); // reset slider
+      setUnderstanding(3);
       setShowModal(false);
     } catch (err) {
       console.error("Error saving progress:", err);
@@ -148,7 +151,6 @@ export default function Home() {
     userSelect: "none",
   };
 
-  // Emoji array for understanding level
   const understandingEmojis = ["😕", "😐", "🙂", "😃", "🤓"];
 
   return (
@@ -156,47 +158,31 @@ export default function Home() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
         <h1 className="text-2xl font-bold text-gray-800 break-words">Welcome, {user.email}</h1>
-        <button
-          onClick={logout}
-          className="text-red-600 font-semibold hover:underline"
-        >
-          Logout
-        </button>
+        <button onClick={logout} className="text-red-600 font-semibold hover:underline">Logout</button>
       </header>
 
-      {/* Responsive Analytics Container */}
+      {/* Analytics Section */}
       <section className="flex flex-col sm:flex-row sm:space-x-6 gap-6 mb-10">
-        <div className="flex-1 min-w-0">
-          <Analytics />
-        </div>
-        <div className="flex-1 min-w-0">
-          <PieAnalytics />
-        </div>
+        <div className="flex-1 min-w-0"><Analytics /></div>
+        <div className="flex-1 min-w-0"><PieAnalytics /></div>
       </section>
 
       {/* Progress List */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Progress</h2>
-
         {progressList.length === 0 ? (
           <p className="text-gray-500">No progress entries yet.</p>
         ) : (
           <ul className="space-y-3">
             {progressList.map(({ id, subject, topic, percentage, notes, createdAt, understanding }) => (
-              <li
-                key={id}
-                className="bg-white p-4 rounded shadow flex flex-col relative break-words"
-              >
-                {/* Delete button */}
+              <li key={id} className="bg-white p-4 rounded shadow flex flex-col relative break-words">
                 <button
                   onClick={() => deleteProgress(id)}
                   className="absolute top-2 right-2 text-red-600 hover:text-red-800 font-bold"
-                  aria-label="Delete progress entry"
                   title="Delete"
                 >
                   ×
                 </button>
-
                 <div className="flex justify-between items-center mb-1 flex-wrap gap-2">
                   <h3 className="font-bold text-lg">{subject}</h3>
                   <span className="text-sm text-gray-500 font-semibold">{percentage}%</span>
@@ -204,10 +190,7 @@ export default function Home() {
                 <p className="text-gray-700 mb-1">{topic}</p>
                 {notes && <p className="text-gray-600 text-sm italic">{notes}</p>}
                 {typeof understanding === "number" && (
-                  <div
-                    className="text-xl mt-1"
-                    title={`Understanding level: ${understanding}`}
-                  >
+                  <div className="text-xl mt-1" title={`Understanding level: ${understanding}`}>
                     {understandingEmojis[understanding - 1]}
                   </div>
                 )}
@@ -221,29 +204,21 @@ export default function Home() {
           </ul>
         )}
       </section>
-<section className="mb-10"> <PomodoroTimer /> </section>
-      {/* To-Do List Section */}
+
+      {/* Pomodoro Section */}
+      <section className="mb-10">
+        <PomodoroTimer />
+      </section>
+
+      {/* To-Do List */}
       <section className="mb-10 max-w-xl mx-auto">
         <h2 className="text-xl font-semibold mb-4 text-center">To-Do List</h2>
         <ul className="p-0 list-none mb-4">
-          {tasks.length === 0 && (
-            <p className="text-center text-gray-500">No tasks added yet.</p>
-          )}
+          {tasks.length === 0 && <p className="text-center text-gray-500">No tasks added yet.</p>}
           {tasks.map((task) => (
-            <li
-              key={task.id}
-              className={`p-3 mb-2 rounded flex justify-between items-center cursor-pointer
-                ${task.completed ? "bg-green-100 line-through text-gray-600" : "bg-gray-100"}`}
-            >
+            <li key={task.id} className={`p-3 mb-2 rounded flex justify-between items-center cursor-pointer ${task.completed ? "bg-green-100 line-through text-gray-600" : "bg-gray-100"}`}>
               <span onClick={() => toggleTaskComplete(task.id)}>{task.title}</span>
-              <button
-                onClick={() => removeTask(task.id)}
-                aria-label="Remove task"
-                title="Remove task"
-                className="text-red-600 hover:text-red-800 font-bold ml-4"
-              >
-                ×
-              </button>
+              <button onClick={() => removeTask(task.id)} className="text-red-600 hover:text-red-800 font-bold ml-4">×</button>
             </li>
           ))}
         </ul>
@@ -255,35 +230,20 @@ export default function Home() {
             onChange={(e) => setNewTaskTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
             className="flex-grow p-3 border border-gray-300 rounded text-base"
-            aria-label="New task title"
           />
-          <button
-            onClick={addTask}
-            style={buttonStyle}
-            aria-label="Add task"
-          >
-            Add
-          </button>
+          <button onClick={addTask} style={buttonStyle}>Add</button>
         </div>
       </section>
 
-      {/* Add Progress Modal */}
+      {/* Modal for Progress Form */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
           <form
             onSubmit={saveProgress}
             className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl space-y-4"
           >
-            <h3 id="modal-title" className="text-xl font-semibold text-gray-800">
-              📈 Add Progress
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-800">📈 Add Progress</h3>
 
-            {/* Subject Dropdown */}
             <select
               className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500"
               value={subject}
@@ -296,7 +256,6 @@ export default function Home() {
               <option value="Math">Math</option>
             </select>
 
-            {/* Topic (optional) */}
             <input
               type="text"
               placeholder="Topic (optional)"
@@ -305,11 +264,8 @@ export default function Home() {
               onChange={(e) => setTopic(e.target.value)}
             />
 
-            {/* % Completed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Percentage Completed
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Percentage Completed</label>
               <input
                 type="number"
                 min={0}
@@ -321,11 +277,8 @@ export default function Home() {
               />
             </div>
 
-            {/* Understanding (Slider) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Understanding Level
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Understanding Level</label>
               <input
                 type="range"
                 min="1"
@@ -339,7 +292,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Notes (optional) */}
             <textarea
               placeholder="Notes (optional)"
               className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
@@ -348,7 +300,6 @@ export default function Home() {
               onChange={(e) => setNotes(e.target.value)}
             />
 
-            {/* Save Button */}
             <button
               type="submit"
               disabled={loadingSave}
@@ -357,7 +308,6 @@ export default function Home() {
               {loadingSave ? "Saving..." : "Save Progress"}
             </button>
 
-            {/* Cancel Button */}
             <button
               type="button"
               onClick={() => setShowModal(false)}
@@ -369,11 +319,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating Add Button */}
+      {/* Floating Button */}
       <button
         onClick={() => setShowModal(true)}
-        aria-label="Add progress"
-        className="fixed bottom-8 right-8 bg-pink-600 text-white p-4 rounded-full shadow-lg hover:bg-pink-700 transition focus:outline-none focus:ring-2 focus:ring-pink-500"
+        className="fixed bottom-8 right-8 bg-pink-600 text-white p-4 rounded-full shadow-lg hover:bg-pink-700 transition"
       >
         +
       </button>
